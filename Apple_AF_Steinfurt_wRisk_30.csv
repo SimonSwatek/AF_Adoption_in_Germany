@@ -78,7 +78,7 @@ apple_harvest,0.2,NA,1.2,posnorm
 apple_postharvest_loss,0.04,NA, 0.11,posnorm
 perc_table_apple,50,NA,80,posnorm
 perc_bqual_apple,20,NA,50,posnorm
-es3_subsidy,200,NA,200,const
+es3_subsidy,600,NA,600,const
 es3_application,5,NA,12,posnorm
 leader_funding,13000,NA,13000,const
 leader_application,5,NA,12,posnorm
