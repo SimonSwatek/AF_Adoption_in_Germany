@@ -584,7 +584,6 @@ plot_distributions(mcSimulation_object = mcSimulation_results,
 
 
 
-
 # #-----------------------------------------------------
 # 
 # # Assuming 'mcSimulation' is a list, and 'y' is an element in it (e.g., mcSimulation$y)
