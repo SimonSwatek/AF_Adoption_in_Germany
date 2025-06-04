@@ -272,6 +272,9 @@ AF_benefit_with_Risks <- function(x, varnames)
   ES3_subsidy <- rep(0, n_years)
   ES3_subsidy[1:n_years] <- es3_subsidy * tree_row_area
   
+  LEADER_subsidy <- rep(0, n_years)
+  LEADER_subsidy[1] <- leader_funding
+  
   #Calculating costs in AF system ####
   #First creating vector, with as many zeros as there are years in the simulation, indicated by the value of "n_years" in the input table
   #Then, filling the vector with the cost-specific values
@@ -323,9 +326,12 @@ AF_benefit_with_Risks <- function(x, varnames)
   AF_irrigation_after_planting_cost <- rep(0, n_years) #Cost for watering in newly planted trees [€]
   AF_irrigation_after_planting_cost[1] <- irrigation_after_planting * water_price * num_trees
   
+  LEADER_application <- rep(0, n_years)
+  LEADER_application[1] <- leader_application
+  
   AF_total_planting_cost <- AF_gps_measuring + AF_dig_plant_holes + AF_tree_cost + AF_plant_tree_cost + AF_vole_protect_cost + AF_deer_protect_cost + AF_weed_protect_cost + AF_compost_cost + AF_irrigation_system_cost + AF_irrigation_after_planting_cost #All costs associated with planting
   
-  AF_total_investment_cost <- AF_planning_cost + AF_pruning_course + AF_total_planting_cost #Investment cost of AF system implementation
+  AF_total_investment_cost <- AF_planning_cost + AF_pruning_course + AF_total_planting_cost + LEADER_application #Investment cost of AF system implementation
   
   #Running costs
   ES3_application <- rep(0, n_years) #Time (regarded as labour cost) spent for application of Eco Scheme subsidy [€]
@@ -418,8 +424,8 @@ AF_benefit_with_Risks <- function(x, varnames)
   AF_total_cost <- AF_total_investment_cost + AF_total_running_cost #Total cost of AF system
   
   
-  #Agroforestry bottom line ####
-  AF_total_benefit <- AF_apple_benefit + AF_maize_benefit + AF_wheat_benefit + AF_barley_benefit + AF_rapeseed_benefit + ES3_subsidy
+  #Scenario 1: Agroforestry bottom line with ES3 + regional one-time funding (LEADER Region Steinfurter Land) ####
+  AF_total_benefit <- AF_apple_benefit + AF_maize_benefit + AF_wheat_benefit + AF_barley_benefit + AF_rapeseed_benefit + ES3_subsidy + LEADER_subsidy
   
   AF_bottom_line_benefit <- AF_total_benefit - AF_total_cost
   
@@ -442,7 +448,7 @@ AF_benefit_with_Risks <- function(x, varnames)
   
   #CREATING THE FUNDING SCENARIOS#######################################################################
   #The default scenario includes ES 3
-  #Scenario 0: No funding at all. ####
+  #Scenario 2: No funding at all. ####
   #All other scenarios contain at least the annual support through ES 3. 
   AF_total_benefit_no_fund <- AF_apple_benefit + AF_maize_benefit + AF_wheat_benefit + AF_barley_benefit + AF_rapeseed_benefit
   
@@ -468,282 +474,8 @@ AF_benefit_with_Risks <- function(x, varnames)
   
   
   
-  #Federal State Investment Support Schemes:
-  # Scenario 1: "NI-Subsidy" ####
-  #Investment funding of Lower Saxony (NI) - 40 % of eligible investment cost (planning and consulting is not considered eligible investment cost!), capped at 20,000 €, only for silvoarable systems
-  NI_sub_application <- rep(0, n_years)
-  NI_sub_application[1] <- annual_sub_application*labour_cost # time spent on applying * per hour labour cost
-  NI_invest_sub <- rep(0, n_years)
-  NI_invest_sub[1] <- ni_invest_sub_max # variable in input table as it is susceptible to change in future
-  AF_total_cost_NI <- AF_total_cost
   
-  if (arable ==1){
-    AF_total_cost_NI <- ifelse((AF_total_investment_cost-AF_planning_cost)*0.4 > 20000, AF_total_investment_cost-NI_invest_sub + NI_sub_application + AF_total_running_cost, (AF_total_investment_cost-AF_planning_cost)*0.6 + AF_planning_cost + NI_sub_application + AF_total_running_cost)} else {
-      AF_total_cost_NI <- AF_total_cost
-    }
-  
-  #Total cost, in Scenario "NI-Subsidy" -> important to note: planning and consulting is not considered an eligible investment cost by Lower Saxony's regulation hence the subtraction in the function
-  
-  AF_bottom_line_benefit_NI <- AF_total_benefit - AF_total_cost_NI#Bottom line, in Scenario "NI-Subsidy"
-  AF_NPV_NI <- discount(AF_bottom_line_benefit_NI, discount_rate=discount_rate,
-                        calculate_NPV = TRUE)#NVP of AF system, in Scenario "NI-Subsidy"
-  AF_cash_flow_NI <- discount(AF_bottom_line_benefit_NI,discount_rate=discount_rate,
-                              calculate_NPV = FALSE)#Cash flow of AF system, in Scenario "NI-Subsidy"
-  AF_cum_cash_flow_NI <- cumsum(AF_cash_flow_NI)#Cumulative cash flow of AF system, in Scenario "NI-Subsidy"
-  
-  #Decision NI (difference between AF system with NI-subsidy and treeless baseline system)
-  Decision_benefit_NI <- AF_bottom_line_benefit_NI - Treeless_bottom_line_benefit
-  NPV_decision_NI <- discount(Decision_benefit_NI, discount_rate = discount_rate,
-                              calculate_NPV = TRUE ) #NPV of the decision, in Scenario "NI-Subsidy"
-  CF_decision_NI <- discount(Decision_benefit_NI, discount_rate = discount_rate, calculate_NPV = FALSE) #Cashflow of the decision, in Scenario "NI-Subsidy"
-  CumCF_decision_NI <- cumsum(CF_decision_NI) #Cumulative cash flow of the decision, in Scenario "NI-Subsidy"
-  
-  
-  # Scenario 2: "BY-Subsidy" ####
-  #Investment funding of Bavaria (BY) - max. 65 % of eligible investment cost, capped at 50,000 €, furthermore, payment per ha of tree row dependent on type of tree row
-  BY_sub_application <- rep(0, n_years)
-  BY_sub_application[1] <- annual_sub_application*labour_cost
-  BY_invest_SRC <- rep(0, n_years)
-  BY_invest_SRC[1] <- by_invest_src
-  BY_invest_shrubs <- rep(0, n_years)
-  BY_invest_shrubs[1] <- by_invest_shrubs
-  BY_invest_timber_food <- rep(0, n_years)
-  BY_invest_timber_food[1] <- by_invest_timb_food
-  BY_invest_sub <- rep(0, n_years)
-  
-  #Funding support is capped at 65 % of eligible funding, while also differentiating between different type of tree rows. Only alley cropping systems are eligible for funding. The following function first asks, if system is alley cropping system, than for the type of tree row and then calculates the respective funding sum.
-  if (alley_crop == 1){
-    if(treerow_SRC == 1) {
-      BY_invest_sub <- ifelse((AF_total_investment_cost/tree_row_area)*0.65 > BY_invest_SRC, BY_invest_SRC, (AF_total_investment_cost/tree_row_area)*0.65)
-    } else if (treerow_shrubs == 1) {
-      BY_invest_sub <- ifelse((AF_total_investment_cost/tree_row_area)*0.65 > BY_invest_shrubs,
-                              BY_invest_shrubs, (AF_total_investment_cost/tree_row_area)*0.65)
-    } else if (treerow_timber_food == 1) {
-      BY_invest_sub <- ifelse((AF_total_investment_cost/tree_row_area)*0.65 > BY_invest_timber_food,
-                              BY_invest_timber_food, (AF_total_investment_cost/tree_row_area)*0.65)
-    } else if (treerow_SRC == 0 && treerow_shrubs == 0 && treerow_timber_food == 0) {
-      BY_invest_sub <- 0 
-    }} else {
-      BY_invest_sub <- 0
-    }
-  
-  
-  #Requested investment support funding must be min. 2,500 € and max. 50,000 €
-  BY_invest_sub <- ifelse(BY_invest_sub < 2500, 0, BY_invest_sub)
-  BY_invest_sub <- ifelse(BY_invest_sub > 50000, 50000, BY_invest_sub)
-  BY_total_invest_sub <- BY_invest_sub*tree_row_area - BY_sub_application
-  
-  #Calculating bottom line, NPV and Cash Flow
-  AF_bottom_line_benefit_BY <- AF_total_benefit + BY_total_invest_sub - AF_total_cost#Bottom line, in Scenario "BY-Subsidy"
-  AF_NPV_BY <- discount(AF_bottom_line_benefit_BY, discount_rate=discount_rate,
-                        calculate_NPV = TRUE)#NVP of AF system, in Scenario "BY-Subsidy"
-  AF_cash_flow_BY <- discount(AF_bottom_line_benefit_BY,discount_rate=discount_rate,
-                              calculate_NPV = FALSE)#Cash flow of AF system, in Scenario "BY-Subsidy"
-  AF_cum_cash_flow_BY <- cumsum(AF_cash_flow_BY)#Cumulative cash flow of AF system, in Scenario "BY-Subsidy"
-  
-  #Decision BY (difference between AF system with BY-subsidy and treeless baseline system)
-  Decision_benefit_BY <- AF_bottom_line_benefit_BY - Treeless_bottom_line_benefit
-  NPV_decision_BY <- discount(Decision_benefit_BY, discount_rate = discount_rate,
-                              calculate_NPV = TRUE ) #NPV of the decision, in Scenario "BY-Subsidy"
-  CF_decision_BY <- discount(Decision_benefit_BY, discount_rate = discount_rate, calculate_NPV = FALSE) #Cashflow of the decision, in Scenario "BY-Subsidy"
-  CumCF_decision_BY <- cumsum(CF_decision_BY) #Cumulative cash flow of the decision, in Scenario "BY-Subsidy"
-  
-  
-  # Scenario 3: "MV-Subsidy" ####
-  #Investment funding of Mecklenburg Western-Pomerania (MV) - max. 65 % of eligible investment cost, capped at 300,000 €, furthermore, payment per ha of tree row dependent on type of tree row
-  MV_sub_application <- rep(0, n_years)
-  MV_sub_application[1] <- annual_sub_application*labour_cost
-  MV_invest_SRC <- rep(0, n_years)
-  MV_invest_SRC[1] <- mv_invest_src
-  MV_invest_shrubs <- rep(0, n_years)
-  MV_invest_shrubs[1] <- mv_invest_shrubs
-  MV_invest_timber_food <- rep(0, n_years)
-  MV_invest_timber_food[1] <- mv_invest_timb_food
-  MV_invest_sub <- rep(0, n_years)
-  
-  
-  #Funding support is capped at 65 % of eligible funding, while also differentiating between different types of tree rows. The following function first asks for the type of tree row and then calculates the respective funding sum. 
-  if (alley_crop == 1){
-    if (treerow_SRC == 1) {
-      MV_invest_sub <- ifelse((AF_total_investment_cost/tree_row_area)*0.65 > MV_invest_SRC,
-                              MV_invest_SRC, (AF_total_investment_cost/tree_row_area)*0.65)
-    } else if (treerow_shrubs == 1) {
-      MV_invest_sub <- ifelse((AF_total_investment_cost/tree_row_area)*0.65 > MV_invest_shrubs,
-                              MV_invest_shrubs, (AF_total_investment_cost/tree_row_area)*0.65)
-    } else if (treerow_timber_food == 1) {
-      MV_invest_sub <- ifelse((AF_total_investment_cost/tree_row_area)*0.65 > MV_invest_timber_food,
-                              MV_invest_timber_food, (AF_total_investment_cost/tree_row_area)*0.65)
-    } else if (treerow_SRC == 0 && treerow_shrubs == 0 && treerow_timber_food == 0) {
-      MV_invest_sub <- 0 #1 and 0 in conditional functions act as operators "TRUE" and "FALSE" 
-    }} else {
-      MV_invest_sub <- 0
-    }
-  
-  #Requested investment support funding must be min. 2,500 € and max. 50,000 €
-  MV_invest_sub <- ifelse(MV_invest_sub < 2500, 0, MV_invest_sub)
-  MV_invest_sub <- ifelse(MV_invest_sub > 300000, 300000, MV_invest_sub)
-  MV_total_invest_sub <- MV_invest_sub*tree_row_area - MV_sub_application
-  
-  #Calculating bottom line, NPV and Cash Flow
-  AF_bottom_line_benefit_MV <- AF_total_benefit + MV_total_invest_sub - AF_total_cost#Bottom line, in Scenario "MV-Subsidy"
-  AF_NPV_MV <- discount(AF_bottom_line_benefit_MV, discount_rate=discount_rate,
-                        calculate_NPV = TRUE)#NVP of AF system, in Scenario "MV-Subsidy"
-  AF_cash_flow_MV <- discount(AF_bottom_line_benefit_MV, discount_rate=discount_rate,
-                              calculate_NPV = FALSE)#Cash flow of AF system, in Scenario "MV-Subsidy"
-  AF_cum_cash_flow_MV <- cumsum(AF_cash_flow_MV)#Cumulative cash flow of AF system, in Scenario "MV-Subsidy"
-  
-  #Decision MV (difference between AF system with MV-subsidy and treeless baseline system)
-  Decision_benefit_MV <- AF_bottom_line_benefit_MV - Treeless_bottom_line_benefit
-  NPV_decision_MV <- discount(Decision_benefit_MV, discount_rate = discount_rate,
-                              calculate_NPV = TRUE ) #NPV of the decision, in Scenario "MV-Subsidy"
-  CF_decision_MV <- discount(Decision_benefit_MV, discount_rate = discount_rate, calculate_NPV = FALSE) #Cashflow of the decision, in Scenario "MV-Subsidy"
-  CumCF_decision_MV <- cumsum(CF_decision_MV) #Cumulative cash flow of the decision, in Scenario "MV-Subsidy"
-  
-  
-  # Scenario 4: "BW-Subsidy" ####
-  #Investment funding of Baden-Württemberg (BW) - max. 80 % of eligible investment cost, capped at 1,500 €. Only cost considered eligible for funding: planning and consulting
-  
-  BW_sub_application <- rep(0, n_years)
-  BW_sub_application[1] <- annual_sub_application*labour_cost #Vector with 30 elements, containing the value of labour cost spent on applying for subsidy
-  AF_consulting <- rep(0, n_years) 
-  AF_consulting[1] <- planning_consulting #Vector with 30 elements, containing the value of planning_consulting as first element
-  BW_invest_sub <- rep(0, n_years)
-  BW_invest_sub[1] <- bw_invest_max
-  AF_total_cost_BW <- AF_total_cost
-  
-  AF_total_cost_BW <- ifelse(AF_consulting*0.8 > 1500,
-                             AF_total_investment_cost-BW_invest_sub + BW_sub_application + AF_total_running_cost,
-                             AF_total_investment_cost-AF_consulting*0.8 + BW_sub_application + AF_total_running_cost) #Total cost of AF system in scenario "BW Subsidy"
-  
-  
-  AF_bottom_line_benefit_BW <- AF_total_benefit - AF_total_cost_BW #Bottom line, in Scenario "BW-Subsidy"
-  AF_NPV_BW <- discount(AF_bottom_line_benefit_BW, discount_rate=discount_rate,
-                        calculate_NPV = TRUE) #NVP of AF system, in Scenario "BW-Subsidy"
-  AF_cash_flow_BW <- discount(AF_bottom_line_benefit_BW,discount_rate=discount_rate,
-                              calculate_NPV = FALSE) #Cash flow of AF system, in Scenario "BW-Subsidy"
-  AF_cum_cash_flow_BW <- cumsum(AF_cash_flow_BW) #Cumulative cash flow of AF system, in Scenario "BW-Subsidy"
-  
-  #Decision BW (difference between AF system with BW-subsidy and treeless baseline system)
-  Decision_benefit_BW <- AF_bottom_line_benefit_BW - Treeless_bottom_line_benefit
-  NPV_decision_BW <- discount(Decision_benefit_BW, discount_rate = discount_rate,
-                              calculate_NPV = TRUE ) #NPV of the decision, in Scenario "BW-Subsidy"
-  CF_decision_BW <- discount(Decision_benefit_BW, discount_rate = discount_rate, calculate_NPV = FALSE) #Cashflow of the decision, in Scenario "BW-Subsidy"
-  CumCF_decision_BW <- cumsum(CF_decision_BW) #Cumulative cash flow of the decision, in Scenario "BW-Subsidy"
-  
-  
-  # Scenario 5 "TH-Subsidy" ####
-  #Investment funding of Thuringia (TH) - max. 100 % of eligible investment cost, capped at 3*2,000 €. Only cost considered eligible for funding: planning and consulting
-  #Three AF-related consulting-topics are funded (representing 3 stages of AF planning, i.e. rough conception, detailed planning, establishment and management)
-  
-  TH_sub_application <- rep(0, n_years)
-  TH_sub_application[1] <- annual_sub_application*labour_cost
-  TH_invest_sub <- rep(0, n_years)
-  TH_invest_sub[1] <- th_invest_max
-  AF_total_cost_TH <- AF_total_cost
-
-  Max_funding_TH <- rep(0, n_years)
-  Max_funding_TH[1] <- max_funding_th
-  
-  # Total cost of AF system in scenario "TH Subsidy"
-  AF_total_cost_TH[1] <- ifelse(
-    AF_consulting[1] <= 2000,
-    AF_total_investment_cost - AF_consulting + TH_sub_application + AF_total_running_cost,
-    ifelse(
-      AF_consulting[1] <= 4000,
-      AF_total_investment_cost - AF_consulting + (TH_sub_application * 2) + AF_total_running_cost,
-      ifelse(
-        AF_consulting[1] <= 6000,
-        AF_total_investment_cost - AF_consulting + (TH_sub_application * 3) + AF_total_running_cost,
-        AF_total_investment_cost - Max_funding_TH + (TH_sub_application * 3) + AF_total_running_cost
-      )
-    )
-  )
-  
-  AF_total_cost_TH[2:n_years] <- AF_total_cost_TH[2:n_years]  # Leave the rest untouched or assign specific values if required
-  
-  
-  AF_bottom_line_benefit_TH <- AF_total_benefit - AF_total_cost_TH#Bottom line, in Scenario "TH-Subsidy"
-  AF_NPV_TH <- discount(AF_bottom_line_benefit_TH, discount_rate=discount_rate,
-                        calculate_NPV = TRUE)#NVP of AF system, in Scenario "TH-Subsidy"
-  AF_cash_flow_TH <- discount(AF_bottom_line_benefit_TH,discount_rate=discount_rate,
-                              calculate_NPV = FALSE)#Cash flow of AF system, in Scenario "TH-Subsidy"
-  AF_cum_cash_flow_TH <- cumsum(AF_cash_flow_TH)#Cumulative cash flow of AF system, in Scenario "TH-Subsidy"
-  
-  #Decision TH (difference between AF system with TH-subsidy and treeless baseline system)
-  Decision_benefit_TH <- AF_bottom_line_benefit_TH - Treeless_bottom_line_benefit
-  NPV_decision_TH <- discount(Decision_benefit_TH, discount_rate = discount_rate,
-                              calculate_NPV = TRUE ) #NPV of the decision, in Scenario "TH-Subsidy"
-  CF_decision_TH <- discount(Decision_benefit_TH, discount_rate = discount_rate, calculate_NPV = FALSE) #Cashflow of the decision, in Scenario "TH-Subsidy"
-  CumCF_decision_TH <- cumsum(CF_decision_TH) #Cumulative cash flow of the decision, in Scenario "TH-Subsidy"
-  
-  
-  # Scenario 6: "BB-Subsidy" ####
-  #Investment funding of Brandenburg/Berlin-funding region - Investment support capped at 18h*85€/h = 1,530 €. Only cost considered eligible for funding: planning and consulting
-  
-  BB_sub_application <- rep(0, n_years)
-  BB_sub_application[1] <- annual_sub_application*labour_cost #Vector with 30 elements, containing the value of labour cost spent on applying for subsidy
-  AF_consulting <- rep(0, n_years) 
-  AF_consulting[1] <- planning_consulting #Vector with 30 elements, containing the value of planning_consulting as first element
-  BB_invest_sub <- rep(0, n_years)
-  BB_invest_sub[1] <- bb_invest_max
-  AF_total_cost_BB <- AF_total_cost
-  
-  AF_total_cost_BB <- ifelse(AF_consulting > 1530,
-                             AF_total_investment_cost-BB_invest_sub + BB_sub_application + AF_total_running_cost,
-                             AF_total_investment_cost-AF_consulting + BW_sub_application + AF_total_running_cost) #Total cost of AF system in scenario "BB Subsidy"
-
-  AF_bottom_line_benefit_BB <- AF_total_benefit - AF_total_cost_BB #Bottom line, in Scenario "BB-Subsidy"
-  AF_NPV_BB <- discount(AF_bottom_line_benefit_BB, discount_rate=discount_rate,
-                        calculate_NPV = TRUE) #NVP of AF system, in Scenario "BB-Subsidy"
-  AF_cash_flow_BB <- discount(AF_bottom_line_benefit_BB,discount_rate=discount_rate,
-                              calculate_NPV = FALSE) #Cash flow of AF system, in Scenario "BB-Subsidy"
-  AF_cum_cash_flow_BB <- cumsum(AF_cash_flow_BB) #Cumulative cash flow of AF system, in Scenario "BB-Subsidy"
-  
-  #Decision BB (difference between AF system with BB-subsidy and treeless baseline system)
-  Decision_benefit_BB <- AF_bottom_line_benefit_BB - Treeless_bottom_line_benefit
-  NPV_decision_BB <- discount(Decision_benefit_BB, discount_rate = discount_rate,
-                              calculate_NPV = TRUE ) #NPV of the decision, in Scenario "BB-Subsidy"
-  CF_decision_BB <- discount(Decision_benefit_BB, discount_rate = discount_rate, calculate_NPV = FALSE) #Cashflow of the decision, in Scenario "BB-Subsidy"
-  CumCF_decision_BB <- cumsum(CF_decision_BB) #Cumulative cash flow of the decision, in Scenario "BB-Subsidy"
-  
-  
-  # Scenario 7 "SN-Subsidy" ####
-  #investment funding of Saxony (SN) - Certain agricultural investments can be funded with 20,000 - 5,000,000 € in 2023 to 2027, this includes silvoarable AF systems (and SRC on arable land). 40 % of eligible cost can be funded. 
-  
-  SN_sub_application <- rep(0, n_years)
-  SN_sub_application[1] <- annual_sub_application*labour_cost
-  
-  AF_total_cost_SN <- AF_total_cost
-  
-  if (arable == 1){ 
-    if (AF_total_investment_cost[1] - AF_planning_cost[1] >= sn_invest_min && #eligible cost must be min. 20,000 €
-        AF_total_investment_cost[1] - AF_planning_cost[1] <= sn_invest_max)#investment support is officially limited to 5,000,000 €
-    {
-      AF_total_cost_SN <- AF_planning_cost + (AF_total_investment_cost-AF_planning_cost)*0.6  + SN_sub_application + AF_total_running_cost #40% funding
-    } else if (AF_total_investment_cost[1] - AF_planning_cost[1] < sn_invest_min) {
-      AF_total_cost_SN <- AF_total_cost
-    } else if (AF_total_investment_cost[1] - AF_planning_cost[1] > sn_invest_max) {
-      AF_total_cost_SN <- AF_total_investment_cost + SN_sub_application + AF_total_running_cost - sn_invest_max #5,000,000 € funding
-    }}else{
-      AF_total_cost_SN <- AF_total_cost
-    }
-  
-  
-  AF_bottom_line_benefit_SN <- AF_total_benefit - AF_total_cost_SN#Bottom line, in Scenario "SN-Subsidy"
-  AF_NPV_SN <- discount(AF_bottom_line_benefit_SN, discount_rate=discount_rate,
-                        calculate_NPV = TRUE)#NVP of AF system, in Scenario "SN-Subsidy"
-  AF_cash_flow_SN <- discount(AF_bottom_line_benefit_SN,discount_rate=discount_rate,
-                              calculate_NPV = FALSE)#Cash flow of AF system, in Scenario "SN-Subsidy"
-  AF_cum_cash_flow_SN <- cumsum(AF_cash_flow_SN)#Cumulative cash flow of AF system, in Scenario "SN-Subsidy"
-  
-  #Decision SN (difference between AF system with SN-subsidy and treeless baseline system)
-  Decision_benefit_SN <- AF_bottom_line_benefit_SN - Treeless_bottom_line_benefit
-  NPV_decision_SN <- discount(Decision_benefit_SN, discount_rate = discount_rate,
-                              calculate_NPV = TRUE ) #NPV of the decision, in Scenario "SN-Subsidy"
-  CF_decision_SN <- discount(Decision_benefit_SN, discount_rate = discount_rate, calculate_NPV = FALSE) #Cashflow of the decision, in Scenario "SN-Subsidy"
-  CumCF_decision_SN <- cumsum(CF_decision_SN) #Cumulative cash flow of the decision, in Scenario "SN-Subsidy"
-  
-  # Scenario 8 "DeFAF-Subsidy" ####
+  # Scenario 3 "DeFAF-Subsidy" ####
   #Investment funding of 100 % for first 10 ha of wooded area, 80 % of additional 10 ha of wooded area and 50 % of every additional ha after 20 ha of total wooded area. 
   #Additionally: annual subsidy of 600 €/ha of wooded area.
   
@@ -805,37 +537,83 @@ AF_benefit_with_Risks <- function(x, varnames)
   return(list(#NPV of the decision in different scenarios
     NPV_decis_AF_ES3 = NPV_decision,
     NPV_decis_no_fund = NPV_decision_no_fund,
-    NPV_decis_NI = NPV_decision_NI,
-    NPV_decis_BY = NPV_decision_BY,
-    NPV_decis_MV = NPV_decision_MV,
-    NPV_decis_SN = NPV_decision_SN,
-    NPV_decis_BW = NPV_decision_BW,
-    NPV_decis_TH = NPV_decision_TH,
-    NPV_decis_BB = NPV_decision_BB,
     NPV_decis_DeFAF = NPV_decision_DeFAF,
     #NPV of AF system in different funding scenarios
     NPV_Agroforestry_System = AF_NPV,
     NPV_Agroforestry_no_fund = AF_NPV_no_fund,
     NPV_Treeless_System = NPV_treeless_system,
-    NPV_NI=AF_NPV_NI,
-    NPV_BY=AF_NPV_BY,
-    NPV_MV=AF_NPV_MV,
-    NPV_BW=AF_NPV_BW,
-    NPV_TH=AF_NPV_TH,
-    NPV_BB=AF_NPV_BB,
     NPV_DeFAF_Suggestion = AF_NPV_DeFAF,
     # #cumulative cash flow of the AF system
     AF_CCF_ES3=AF_cum_cash_flow,
     AF_CCF_no_fund=AF_cum_cash_flow_no_fund,
-    AF_CCF_NI=AF_cum_cash_flow_NI,
-    AF_CCF_BY=AF_cum_cash_flow_BY,
-    AF_CCF_MV=AF_cum_cash_flow_MV,
-    AF_CCF_BW=AF_cum_cash_flow_BW,
-    AF_CCF_TH=AF_cum_cash_flow_TH,
-    AF_CCF_BB=AF_cum_cash_flow_BB,
-    AF_CCF_SN=AF_cum_cash_flow_SN,
     AF_CCF_DeFAF = AF_cum_cash_flow_DeFAF,
     AF_CF = AF_cash_flow
     ))
 }
 # END of the Decision Model ####
+
+
+
+#Run the Monte Carlo analysis of the model
+mcSimulation_results <- mcSimulation(
+  estimate = estimate_read_csv(fileName = "Apple_AF_Steinfurt_wRisk_30.csv"),
+  model_function = AF_benefit_with_Risks,
+  numberOfModelRuns = 10000,
+  functionSyntax = "plainNames")
+
+# NPV
+plot_distributions(mcSimulation_object = mcSimulation_results, 
+                   vars = c("NPV_Treeless_System", "NPV_Agroforestry_no_fund", "NPV_Agroforestry_System", "NPV_DeFAF_Suggestion"),
+                   method = 'boxplot', 
+                   base_size = 7,
+                   x_axis_name = "Outcome as NPV in €",
+                   scale_x_continuous(labels = function(x) x / 100000),
+                   ggtitle("Comparison of NPV over 30 years"),
+                   legend.position="bottom")
+
+# NPV decision
+
+plot_distributions(mcSimulation_object = mcSimulation_results, 
+                   vars = c("NPV_decis_no_fund", "NPV_decis_AF_ES3", "NPV_decis_DeFAF"),
+                   method = 'boxplot', 
+                   base_size = 7,
+                   x_axis_name = "Outcome as NPV in €",
+                   scale_x_continuous(labels = function(x) x / 100000),
+                   ggtitle("Comparison of NPV of the decision over 30 years"),
+                   legend.position="bottom")
+
+
+
+
+#-----------------------------------------------------
+
+# Assuming 'mcSimulation' is a list, and 'y' is an element in it (e.g., mcSimulation$y)
+y <- mcSimulation_results$y
+
+# Extract the first 3 data frames from 'y'
+df1 <- y[[1]]
+df2 <- y[[2]]
+df3 <- y[[3]]
+
+# Add an identifier column to each data frame
+df1$distribution <- "Dist1"
+df2$distribution <- "Dist2"
+df3$distribution <- "Dist3"
+
+# Combine all 3 data frames into one
+combined_df <- rbind(df1, df2, df3)
+
+# Identify the name of the simulation result column (assumes it's the same in all)
+value_col <- setdiff(names(df1), "distribution")[1]  # Avoids the "distribution" column
+colnames(combined_df)[colnames(combined_df) == value_col] <- "value"
+
+# Load ggplot2 if not already loaded
+library(ggplot2)
+
+# Plot boxplots
+ggplot(combined_df, aes(x = distribution, y = value, fill = distribution)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Monte Carlo Simulation Output (First 3 Distributions)",
+       x = "Distribution",
+       y = "Value")
