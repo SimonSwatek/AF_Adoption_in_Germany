@@ -585,34 +585,93 @@ plot_distributions(mcSimulation_object = mcSimulation_results,
 
 
 # #-----------------------------------------------------
-# 
-# # Assuming 'mcSimulation' is a list, and 'y' is an element in it (e.g., mcSimulation$y)
-# y <- mcSimulation_results$y
-# 
-# # Extract the first 3 data frames from 'y'
-# df1 <- y[[1]]
-# df2 <- y[[2]]
-# df3 <- y[[3]]
-# 
-# # Add an identifier column to each data frame
-# df1$distribution <- "Dist1"
-# df2$distribution <- "Dist2"
-# df3$distribution <- "Dist3"
-# 
-# # Combine all 3 data frames into one
-# combined_df <- rbind(df1, df2, df3)
-# 
-# # Identify the name of the simulation result column (assumes it's the same in all)
-# value_col <- setdiff(names(df1), "distribution")[1]  # Avoids the "distribution" column
-# colnames(combined_df)[colnames(combined_df) == value_col] <- "value"
-# 
-# # Load ggplot2 if not already loaded
-# library(ggplot2)
-# 
-# # Plot boxplots
-# ggplot(combined_df, aes(x = distribution, y = value, fill = distribution)) +
-#   geom_boxplot() +
-#   theme_minimal() +
-#   labs(title = "Monte Carlo Simulation Output (First 3 Distributions)",
-#        x = "Distribution",
-#        y = "Value")
+
+y <- mcSimulation_results$y 
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+
+# Select and transform the first three variables
+y_subset <- y[, 1:3]
+y_subset$id <- 1:nrow(y_subset)
+
+# Reshape to long format
+y_long <- pivot_longer(y_subset, cols = 1:3, names_to = "variable", values_to = "value")
+
+# Convert value to €/ha
+y_long <- y_long %>%
+  mutate(value = value / 10.14)
+
+# Rename variables
+y_long <- y_long %>%
+  mutate(variable = recode(variable,
+                           "NPV_decis_AF_ES3" = "Only ES3",
+                           "NPV_decis_no_fund" = "No funding",
+                           "NPV_decis_DeFAF" = "DeFAF-suggested funding"))
+
+# Reorder factors by median value
+y_long <- y_long %>%
+  mutate(variable = fct_reorder(variable, value, .fun = median))
+
+# Set custom colors
+custom_colors <- c("No funding" = "#D95F02", 
+                   "Only ES3" = "#1B9E77", 
+                   "DeFAF-suggested funding" = "#7570B3")
+
+# Plot
+ggplot(y_long, aes(x = variable, y = value, fill = variable)) +
+  geom_boxplot(alpha = 0.6, outlier.size = 0.5) +
+  coord_flip() +
+  theme_minimal() +
+  scale_fill_manual(values = custom_colors) +
+  labs(title = NULL,
+       x = "Scenarios",
+       y = "NPV of the decision [€/ha]") +
+  theme(legend.position = "none", axis.title.x = element_text(hjust = 0.3))  # Optional: hide legend if labels on axis suffice
+
+ggsave("Apple_AF_DECISION_boxplot.png", 
+       width = 9, height = 5, dpi = 300, units = "in")
+#--------------------------------------------------------------------------------
+# Select and transform the first three variables
+y_subset2 <- y[, 4:7]
+y_subset2$id <- 1:nrow(y_subset2)
+
+# Reshape to long format
+y_long2 <- pivot_longer(y_subset2, cols = 1:4, names_to = "variable", values_to = "value")
+
+# Convert value to €/ha
+y_long2 <- y_long2 %>%
+  mutate(value = value / 10.14)
+
+# Rename variables
+y_long2 <- y_long2 %>%
+  mutate(variable = recode(variable,
+                           "NPV_Agroforestry_System" = "Only ES3",
+                           "NPV_Agroforestry_no_fund" = "No funding",
+                           "NPV_DeFAF_Suggestion" = "DeFAF-suggested funding",
+                           "NPV_Treeless_System" = "Treeless system"))
+
+# Reorder factors by median value
+y_long2 <- y_long2 %>%
+  mutate(variable = fct_reorder(variable, value, .fun = median))
+
+# Set custom colors
+custom_colors <- c("No funding" = "#D95F02", 
+                   "Only ES3" = "#1B9E77", 
+                   "DeFAF-suggested funding" = "#7570B3",
+                   "Treeless system" = "#E7298A")
+
+# Plot
+ggplot(y_long2, aes(x = variable, y = value, fill = variable)) +
+  geom_boxplot(alpha = 0.6, outlier.size = 0.5) +
+  coord_flip() +
+  theme_minimal() +
+  scale_fill_manual(values = custom_colors) +
+  labs(title = NULL,
+       x = "Scenarios",
+       y = "NPV [€/ha]") +
+  theme(legend.position = "none", axis.title.x = element_text(hjust = 0.3))  # Optional: hide legend if labels on axis suffice
+
+ggsave("Apple_AF_NPV_boxplot.png", 
+       width = 9, height = 5, dpi = 300, units = "in")
