@@ -88,7 +88,6 @@ arable,1,NA,1,const
 treerow_SRC,0,NA,0,const
 treerow_shrubs,0,NA,0,const
 treerow_timber_food,1,NA,1,const
-ni_invest_sub_max,20000,NA,20000,const
 annual_sub_application,2,NA,5,posnorm
 by_invest_src,1566,NA,1566,const
 by_invest_shrubs,4138,NA,4138,const

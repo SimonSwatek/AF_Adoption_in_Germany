@@ -585,35 +585,35 @@ plot_distributions(mcSimulation_object = mcSimulation_results,
 
 
 
-#-----------------------------------------------------
-
-# Assuming 'mcSimulation' is a list, and 'y' is an element in it (e.g., mcSimulation$y)
-y <- mcSimulation_results$y
-
-# Extract the first 3 data frames from 'y'
-df1 <- y[[1]]
-df2 <- y[[2]]
-df3 <- y[[3]]
-
-# Add an identifier column to each data frame
-df1$distribution <- "Dist1"
-df2$distribution <- "Dist2"
-df3$distribution <- "Dist3"
-
-# Combine all 3 data frames into one
-combined_df <- rbind(df1, df2, df3)
-
-# Identify the name of the simulation result column (assumes it's the same in all)
-value_col <- setdiff(names(df1), "distribution")[1]  # Avoids the "distribution" column
-colnames(combined_df)[colnames(combined_df) == value_col] <- "value"
-
-# Load ggplot2 if not already loaded
-library(ggplot2)
-
-# Plot boxplots
-ggplot(combined_df, aes(x = distribution, y = value, fill = distribution)) +
-  geom_boxplot() +
-  theme_minimal() +
-  labs(title = "Monte Carlo Simulation Output (First 3 Distributions)",
-       x = "Distribution",
-       y = "Value")
+# #-----------------------------------------------------
+# 
+# # Assuming 'mcSimulation' is a list, and 'y' is an element in it (e.g., mcSimulation$y)
+# y <- mcSimulation_results$y
+# 
+# # Extract the first 3 data frames from 'y'
+# df1 <- y[[1]]
+# df2 <- y[[2]]
+# df3 <- y[[3]]
+# 
+# # Add an identifier column to each data frame
+# df1$distribution <- "Dist1"
+# df2$distribution <- "Dist2"
+# df3$distribution <- "Dist3"
+# 
+# # Combine all 3 data frames into one
+# combined_df <- rbind(df1, df2, df3)
+# 
+# # Identify the name of the simulation result column (assumes it's the same in all)
+# value_col <- setdiff(names(df1), "distribution")[1]  # Avoids the "distribution" column
+# colnames(combined_df)[colnames(combined_df) == value_col] <- "value"
+# 
+# # Load ggplot2 if not already loaded
+# library(ggplot2)
+# 
+# # Plot boxplots
+# ggplot(combined_df, aes(x = distribution, y = value, fill = distribution)) +
+#   geom_boxplot() +
+#   theme_minimal() +
+#   labs(title = "Monte Carlo Simulation Output (First 3 Distributions)",
+#        x = "Distribution",
+#        y = "Value")
