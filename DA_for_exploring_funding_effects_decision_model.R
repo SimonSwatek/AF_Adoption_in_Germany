@@ -606,7 +606,7 @@ y_long <- y_long %>%
 # Rename variables
 y_long <- y_long %>%
   mutate(variable = recode(variable,
-                           "NPV_decis_AF_ES3" = "Only ES3",
+                           "NPV_decis_AF_ES3" = "ES3 and regional funding",
                            "NPV_decis_no_fund" = "No funding",
                            "NPV_decis_DeFAF" = "DeFAF-suggested funding"))
 
@@ -616,7 +616,7 @@ y_long <- y_long %>%
 
 # Set custom colors
 custom_colors <- c("No funding" = "#D95F02", 
-                   "Only ES3" = "#1B9E77", 
+                   "ES3 and regional funding" = "#1B9E77", 
                    "DeFAF-suggested funding" = "#7570B3")
 
 # Plot
@@ -633,7 +633,7 @@ ggplot(y_long, aes(x = variable, y = value, fill = variable)) +
 ggsave("Apple_AF_DECISION_boxplot.png", 
        width = 9, height = 5, dpi = 300, units = "in")
 #--------------------------------------------------------------------------------
-# Select and transform the first three variables
+# Select and transform the NPV variables
 y_subset2 <- y[, 4:7]
 y_subset2$id <- 1:nrow(y_subset2)
 
@@ -647,18 +647,22 @@ y_long2 <- y_long2 %>%
 # Rename variables
 y_long2 <- y_long2 %>%
   mutate(variable = recode(variable,
-                           "NPV_Agroforestry_System" = "Only ES3",
+                           "NPV_Agroforestry_System" = "ES3 and regional funding",
                            "NPV_Agroforestry_no_fund" = "No funding",
                            "NPV_DeFAF_Suggestion" = "DeFAF-suggested funding",
                            "NPV_Treeless_System" = "Treeless system"))
 
-# Reorder factors by median value
+# Reorder manually: top to bottom in plot = last to first in factor
 y_long2 <- y_long2 %>%
-  mutate(variable = fct_reorder(variable, value, .fun = median))
+  mutate(variable = factor(variable,
+                           levels = c("Treeless system", 
+                                      "No funding", 
+                                      "ES3 and regional funding", 
+                                      "DeFAF-suggested funding")))
 
 # Set custom colors
 custom_colors <- c("No funding" = "#D95F02", 
-                   "Only ES3" = "#1B9E77", 
+                   "ES3 and regional funding" = "#1B9E77", 
                    "DeFAF-suggested funding" = "#7570B3",
                    "Treeless system" = "#E7298A")
 
