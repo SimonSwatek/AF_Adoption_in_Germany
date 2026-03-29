@@ -16,7 +16,7 @@ library(reshape2)
 #The function
 # 1. extracts the y data frame from the monte carlo output from decisionSupport::mcSimulation()
 # 2. filters the NPV distributions based on a prefix
-# 3. prepares the NPV data in a way, that ggplot2 fucntions can read and plot it
+# 3. prepares the NPV data in a way, that ggplot2 functions can read and plot it
 
 Prepare_mc_output <- function(mc_output, prefixes){
   # Extract the "y" element from the Monte Carlo output list
@@ -209,10 +209,10 @@ find_payback_year <- function(values_matrix, percentiles = c(0.05, 0.25, 0.5, 0.
 
 # Extract unique scenario names
 MC_y_20 <- MC_20years$y
-CCF_20 <- MC_y_20[, grep(paste0("^AF_CCF"), colnames(MC_y_20))]
+CCF_20 <- MC_y_20[, grep(paste0("^Decis_CCF_"), colnames(MC_y_20))] #using the incremental CFF instead of the total CCF of the AF system to remain consistent within the decision framework of the study
 scenario_names <- unique(sub("[0-9]+$", "", colnames(CCF_20)))
 
-# Initialize a data frame to store the results
+# Initialize a data frame to store the results (probabilistically displaying how long it takes for the AF system to recover the initial economic disadvantage)
 percentile_results <- data.frame(row.names = c("5th", "25th", "50th", "75th", "95th"))
 
 # Loop through each scenario
@@ -230,6 +230,15 @@ for (scenario in scenario_names) {
 #Transpose for easier reading and extraction of confidence intervals
 trans_percentile_results <- as.data.frame(t(percentile_results))
 
+
+#Find investment cost (to add as an example main model input to the manuscript)
+AF_investment_cost <- quantile(
+  MC_y_20$AF_invest_cost1,
+  probs = c(0.05, 0.25, 0.50, 0.75, 0.95),
+  na.rm = TRUE
+)
+
+AF_investment_cost
 
 
 #VISUALISING THE EXPECTED VALUE OF PERFECT PARAMETER INFORMATION ####

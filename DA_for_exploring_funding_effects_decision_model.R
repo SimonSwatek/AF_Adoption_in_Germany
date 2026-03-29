@@ -181,9 +181,9 @@ AF_benefit_with_Risks <- function(x, varnames)
   
   #Calculating NPV, Cash Flow and Cumulative Cash Flow of the baseline system
   
-  NPV_treeless_system <- discount(Treeless_total_benefit, discount_rate = discount_rate,
+  NPV_treeless_system <- discount(Treeless_bottom_line_benefit, discount_rate = discount_rate,
                                   calculate_NPV = TRUE) #NVP of treeless arable system 
-  Treeless_cash_flow <- discount(Treeless_total_benefit, discount_rate = discount_rate,
+  Treeless_cash_flow <- discount(Treeless_bottom_line_benefit, discount_rate = discount_rate,
                                  calculate_NPV = FALSE) #Cash flow of treeless system
   Treeless_cum_cash_flow <- cumsum(Treeless_cash_flow) #Cumulative cash flow of treeless system
   #-----------------------------------------------------------------------------------------------------------  
@@ -823,19 +823,21 @@ AF_benefit_with_Risks <- function(x, varnames)
     NPV_BW=AF_NPV_BW,
     NPV_TH=AF_NPV_TH,
     NPV_BB=AF_NPV_BB,
+    NPV_SN=AF_NPV_SN,
     NPV_DeFAF_Suggestion = AF_NPV_DeFAF,
-    # #cumulative cash flow of the AF system
-    AF_CCF_ES3=AF_cum_cash_flow,
-    AF_CCF_no_fund=AF_cum_cash_flow_no_fund,
-    AF_CCF_NI=AF_cum_cash_flow_NI,
-    AF_CCF_BY=AF_cum_cash_flow_BY,
-    AF_CCF_MV=AF_cum_cash_flow_MV,
-    AF_CCF_BW=AF_cum_cash_flow_BW,
-    AF_CCF_TH=AF_cum_cash_flow_TH,
-    AF_CCF_BB=AF_cum_cash_flow_BB,
-    AF_CCF_SN=AF_cum_cash_flow_SN,
-    AF_CCF_DeFAF = AF_cum_cash_flow_DeFAF,
-    AF_CF = AF_cash_flow
-    ))
+    # cumulative cash flow of the decision (to calculate the payback period as "time required for the AF system to recover the foregone net benefits relative to the baseline system")
+    Decis_CCF_no_fund = CumCF_decision_no_fund,
+    Decis_CCF_ES3 = CumCF_decision,
+    Decis_CCF_NI = CumCF_decision_NI,
+    Decis_CCF_BY = CumCF_decision_BY,
+    Decis_CCF_MV = CumCF_decision_MV,
+    Decis_CCF_BW = CumCF_decision_BW,
+    Decis_CCF_TH = CumCF_decision_TH,
+    Decis_CCF_BB = CumCF_decision_BB,
+    Decis_CCF_SN = CumCF_decision_SN,
+    Decis_CCF_DeFAF = CumCF_decision_DeFAF,
+    # total investment costs for the AF system
+    AF_invest_cost = AF_total_investment_cost
+  ))
 }
 # END of the Decision Model ####
